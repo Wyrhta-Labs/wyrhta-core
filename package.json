@@ -1,0 +1,45 @@
+{
+  "name": "@wyrhta/core",
+  "version": "0.1.0",
+  "description": "Shared foundation for Wyrhta Labs services: identity, auth, HTTP kit, household, MCP scaffold, DB conventions",
+  "type": "module",
+  "files": ["dist"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./config": { "types": "./dist/config/index.d.ts", "import": "./dist/config/index.js" },
+    "./lib": { "types": "./dist/lib/index.d.ts", "import": "./dist/lib/index.js" },
+    "./http": { "types": "./dist/http/index.d.ts", "import": "./dist/http/index.js" },
+    "./identity": { "types": "./dist/identity/index.d.ts", "import": "./dist/identity/index.js" },
+    "./auth": { "types": "./dist/auth/index.d.ts", "import": "./dist/auth/index.js" },
+    "./household": { "types": "./dist/household/index.d.ts", "import": "./dist/household/index.js" },
+    "./mcp": { "types": "./dist/mcp/index.d.ts", "import": "./dist/mcp/index.js" },
+    "./db": { "types": "./dist/db/index.d.ts", "import": "./dist/db/index.js" }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "prepare": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "tsx node_modules/drizzle-kit/bin.cjs generate",
+    "db:migrate": "tsx node_modules/drizzle-kit/bin.cjs migrate",
+    "db:push": "tsx node_modules/drizzle-kit/bin.cjs push",
+    "db:studio": "tsx node_modules/drizzle-kit/bin.cjs studio"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "argon2": "^0.41.1",
+    "drizzle-orm": "^0.39.3",
+    "hono": "^4.7.4",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@vitest/coverage-v8": "^3.0.8",
+    "drizzle-kit": "^0.30.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}
