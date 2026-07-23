@@ -11,7 +11,7 @@ import type { AuthAdapter, McpTool } from './types.js';
 export function createMcpServer(
   registry: McpTool[],
   authAdapter: AuthAdapter,
-  info: { name: string; version: string } = { name: '@wyrhta/core', version: '0.1.0' }
+  info: { name: string; version: string } = { name: '@wyrhta/core', version: '0.1.2' }
 ): McpServer {
   const server = new McpServer(info);
 
