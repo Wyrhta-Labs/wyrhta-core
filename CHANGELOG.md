@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/) —
 pre-1.0, a minor bump may break compatibility, a patch bump is safe.
 
+## [0.1.3] - 2026-07-27
+
+### Fixed
+
+- The `./mcp` server scaffold no longer collapses every tool-handler throw
+  into the generic "Unauthorized or tool error" message. Handler errors whose
+  message is a bare UPPER_SNAKE_CASE domain code (e.g. `NOT_FOUND`,
+  `CONFLICT`) are now surfaced verbatim to MCP clients (`isError: true`);
+  anything else (raw driver errors, non-`Error` throws) stays a generic
+  "tool error". Auth failures (`authAdapter.resolve()` throws) still return
+  the original generic message unconditionally, so auth details can never
+  leak — even when the thrown message looks like a domain code.
+
 ## [0.1.2] - 2026-07-23
 
 ### Added

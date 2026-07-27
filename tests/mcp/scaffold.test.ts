@@ -53,5 +53,90 @@ describe('createMcpServer', () => {
     const client = await connect(createMcpServer([echoTool()], adapter));
     const result = await client.callTool({ name: 'echo', arguments: { message: 'hi' } });
     expect(result.isError).toBe(true);
+    expect((result.content as Array<{ text: string }>)[0]!.text).toBe(
+      'Unauthorized or tool error'
+    );
+  });
+
+  it('keeps auth failures generic even when the thrown message looks like a domain code', async () => {
+    const adapter: AuthAdapter = {
+      resolve: async () => {
+        throw new Error('NOT_FOUND');
+      },
+    };
+    const client = await connect(createMcpServer([echoTool()], adapter));
+    const result = await client.callTool({ name: 'echo', arguments: { message: 'hi' } });
+    expect(result.isError).toBe(true);
+    expect((result.content as Array<{ text: string }>)[0]!.text).toBe(
+      'Unauthorized or tool error'
+    );
+  });
+
+  it('surfaces a recognized domain error code thrown by the tool handler', async () => {
+    const adapter: AuthAdapter = { resolve: async () => principal };
+    const tool: McpTool = {
+      name: 'boom',
+      description: 'Throws a domain error',
+      inputSchema: {},
+      handler: async () => {
+        throw new Error('NOT_FOUND');
+      },
+    };
+    const client = await connect(createMcpServer([tool], adapter));
+    const result = await client.callTool({ name: 'boom', arguments: {} });
+    expect(result.isError).toBe(true);
+    expect((result.content as Array<{ text: string }>)[0]!.text).toBe('NOT_FOUND');
+  });
+
+  it('surfaces CONFLICT from the tool handler', async () => {
+    const adapter: AuthAdapter = { resolve: async () => principal };
+    const tool: McpTool = {
+      name: 'conflict',
+      description: 'Throws CONFLICT',
+      inputSchema: {},
+      handler: async () => {
+        throw new Error('CONFLICT');
+      },
+    };
+    const client = await connect(createMcpServer([tool], adapter));
+    const result = await client.callTool({ name: 'conflict', arguments: {} });
+    expect(result.isError).toBe(true);
+    expect((result.content as Array<{ text: string }>)[0]!.text).toBe('CONFLICT');
+  });
+
+  it('does not leak internals when the tool handler throws an unrecognized error', async () => {
+    const adapter: AuthAdapter = { resolve: async () => principal };
+    const tool: McpTool = {
+      name: 'db-fail',
+      description: 'Throws a raw internal error',
+      inputSchema: {},
+      handler: async () => {
+        throw new Error('connect ECONNREFUSED 127.0.0.1:5432 (password=hunter2)');
+      },
+    };
+    const client = await connect(createMcpServer([tool], adapter));
+    const result = await client.callTool({ name: 'db-fail', arguments: {} });
+    expect(result.isError).toBe(true);
+    const text = (result.content as Array<{ text: string }>)[0]!.text;
+    expect(text).toBe('tool error');
+    expect(text).not.toContain('ECONNREFUSED');
+    expect(text).not.toContain('hunter2');
+  });
+
+  it('does not leak internals when the tool handler throws a non-Error value', async () => {
+    const adapter: AuthAdapter = { resolve: async () => principal };
+    const tool: McpTool = {
+      name: 'weird',
+      description: 'Throws a string',
+      inputSchema: {},
+      handler: async () => {
+        // eslint-disable-next-line no-throw-literal
+        throw 'SECRET_INTERNAL_STATE';
+      },
+    };
+    const client = await connect(createMcpServer([tool], adapter));
+    const result = await client.callTool({ name: 'weird', arguments: {} });
+    expect(result.isError).toBe(true);
+    expect((result.content as Array<{ text: string }>)[0]!.text).toBe('tool error');
   });
 });

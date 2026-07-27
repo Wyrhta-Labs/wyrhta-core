@@ -8,7 +8,7 @@ link — each service is an independent repo:
 ```json
 {
   "dependencies": {
-    "@wyrhta/core": "github:Wyrhta-Labs/wyrhta-core#v0.1.2"
+    "@wyrhta/core": "github:Wyrhta-Labs/wyrhta-core#v0.1.3"
   }
 }
 ```

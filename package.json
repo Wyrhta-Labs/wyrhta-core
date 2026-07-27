@@ -1,6 +1,6 @@
 {
   "name": "@wyrhta/core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Shared foundation for Wyrhta Labs services: identity, auth, HTTP kit, household, MCP scaffold, DB conventions",
   "type": "module",
   "files": ["dist"],
