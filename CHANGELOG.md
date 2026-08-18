@@ -28,11 +28,39 @@ pre-1.0, a minor bump may break compatibility, a patch bump is safe.
     set, `requireAuth` / `requireJwt` reject tokens from another issuer or for
     another audience with the usual 401.
 
+- Asymmetric member tokens in `./identity`, so an identity provider can sign
+  with a private key while a satellite service only ever verifies and is
+  structurally unable to mint:
+  - New key surface: `loadPrivateKey` / `loadPublicKey` (PKCS#8 or SPKI PEM,
+    a JWK JSON string, or a JWK object — the caller supplies the material;
+    core still reads no env and no files), `publicKeyFromPrivate`, and
+    `toJwks`, which builds the `{ keys: [...] }` JWKS document a service
+    publishes. Core builds the document, the consuming service serves it;
+    the output can never carry a private component.
+  - `signToken` / `issueToken` accept a `PrivateSigningKey` in place of the
+    shared secret and sign RS256 or EdDSA (Ed25519), stamping that key's
+    `kid` into the JWT header.
+  - `verifyToken` accepts a single public key or a **set** of them and selects
+    by the token header's `kid` (`UNKNOWN_KEY_ID` when none matches). A token
+    signed by any other key fails signature verification, and an HS256 token
+    cannot pass against public keys.
+  - `createAuthGuards` deps take `jwtVerificationKeys`; when set they replace
+    `jwtSecret` for JWT verification, and `jwtSecret` itself is now optional so
+    a pure verifier need not hold one at all (with neither given,
+    `createAuthGuards` throws `MISSING_JWT_VERIFICATION_KEY`).
+
+- Clock-skew leeway: `verifyToken`'s `leewaySeconds` option, and the guards'
+  `jwtLeewaySeconds`, widen the `exp` / `nbf` / `iat` checks — needed for
+  short-TTL tokens verified across two containers. It defaults to `0`, exactly
+  the previous tolerance-free behavior. `hono/jwt` has no leeway of its own, so
+  core takes over the time checks (throwing `TOKEN_EXPIRED` /
+  `TOKEN_NOT_BEFORE` / `TOKEN_ISSUED_AT`) only when a leeway is requested.
+
   Strictly backward compatible: every existing call site — both consumers pass
-  no issuer/audience today — behaves exactly as before, and tokens already
-  issued (7-day TTL) stay valid. Signing keys, rotation, JWKS and asymmetric
-  algorithms are deliberately out of scope; HS256 with a shared secret is
-  unchanged.
+  a shared secret and no issuer/audience today — behaves exactly as before, and
+  tokens already issued (7-day HS256) stay valid. Key rotation *policy*
+  (overlapping validity windows, when to retire a key) is deliberately out of
+  scope: core provides the mechanism, the issuing service decides the policy.
 
 ## [0.1.3] - 2026-07-27
 

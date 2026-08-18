@@ -25,8 +25,8 @@ Each subpath below is an independent `exports` entry — import only what you ne
 | `@wyrhta/core/config` | Zod-based environment parsing |
 | `@wyrhta/core/lib` | API-key crypto helpers, structured logger |
 | `@wyrhta/core/http` | Response envelope (`ok`/`err`), pagination helpers, and `requestId` / `securityHeaders` / `rateLimit` / `errorHandler` Hono middleware |
-| `@wyrhta/core/identity` | `users` + `api_keys` schema, argon2 password hashing, HS256 JWT issuing/verification (optional `iss` / `aud` claims), roles (`admin` / `adult` / `child`) |
-| `@wyrhta/core/auth` | Auth-scheme dispatch and Hono guards (`requireAuth`, `requireJwt`, `requireRole`); the consuming app injects the API-key lookup and, optionally, the expected JWT issuer/audience |
+| `@wyrhta/core/identity` | `users` + `api_keys` schema, argon2 password hashing, JWT issuing/verification — HS256 shared secret or RS256 / EdDSA keys with `kid` selection, optional `iss` / `aud` claims and clock-skew leeway — plus key loading and JWKS document construction, roles (`admin` / `adult` / `child`) |
+| `@wyrhta/core/auth` | Auth-scheme dispatch and Hono guards (`requireAuth`, `requireJwt`, `requireRole`); the consuming app injects the API-key lookup and, optionally, the expected JWT issuer/audience, public verification keys, and clock-skew leeway |
 | `@wyrhta/core/household` | DB-enforced singleton household |
 | `@wyrhta/core/mcp` | `McpServer` factory over a tool registry, wired to an auth adapter and audit logging |
 | `@wyrhta/core/db` | Drizzle ORM / `postgres.js` client factory plus a migrations runner |

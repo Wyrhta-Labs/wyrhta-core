@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import { err } from '../http/response.js';
-import { verifyToken, type VerifyTokenOptions } from '../identity/jwt.js';
+import { verifyToken, type VerificationKey, type VerifyTokenOptions } from '../identity/jwt.js';
+import type { PublicVerificationKey } from '../identity/keys.js';
 import type { Role } from '../identity/schema.js';
 import { detectAuthScheme } from './dispatch.js';
 
@@ -17,7 +18,23 @@ declare module 'hono' {
 }
 
 export interface AuthGuardDeps {
-  jwtSecret: string;
+  /**
+   * HS256 shared secret. Optional only so a satellite that verifies member
+   * tokens with `jwtVerificationKeys` need not hold a signing secret at all;
+   * one of the two must be given.
+   */
+  jwtSecret?: string;
+  /**
+   * Public keys (from `loadPublicKey` / a fetched JWKS) used to verify
+   * asymmetrically signed tokens, selected by the token's `kid`. When set,
+   * these are used instead of `jwtSecret` — such a guard cannot mint tokens.
+   */
+  jwtVerificationKeys?: PublicVerificationKey[];
+  /**
+   * Clock-skew tolerance in seconds for `exp` / `nbf` / `iat`. Defaults to
+   * `0` (the pre-v0.2.0 behavior).
+   */
+  jwtLeewaySeconds?: number;
   /** App API-key prefix, e.g. `kl_` or `he_`. */
   keyPrefix: string;
   /**
@@ -42,7 +59,17 @@ export interface AuthGuards {
 }
 
 export function createAuthGuards(deps: AuthGuardDeps): AuthGuards {
-  const verifyOptions: VerifyTokenOptions = { iss: deps.jwtIssuer, aud: deps.jwtAudience };
+  const verifyOptions: VerifyTokenOptions = {
+    iss: deps.jwtIssuer,
+    aud: deps.jwtAudience,
+    leewaySeconds: deps.jwtLeewaySeconds,
+  };
+  const verificationKey: VerificationKey = deps.jwtVerificationKeys?.length
+    ? deps.jwtVerificationKeys
+    : (deps.jwtSecret ?? '');
+  if (typeof verificationKey === 'string' && verificationKey === '') {
+    throw new Error('MISSING_JWT_VERIFICATION_KEY');
+  }
 
   const requireAuth: MiddlewareHandler = async (c, next) => {
     const header = c.req.header('Authorization');
@@ -57,7 +84,7 @@ export function createAuthGuards(deps: AuthGuardDeps): AuthGuards {
 
     if (scheme === 'jwt') {
       try {
-        const claims = await verifyToken(header!.slice(7).trim(), deps.jwtSecret, verifyOptions);
+        const claims = await verifyToken(header!.slice(7).trim(), verificationKey, verifyOptions);
         c.set('principal', { type: 'jwt', userId: claims.sub, role: claims.role });
         return next();
       } catch {
@@ -74,7 +101,7 @@ export function createAuthGuards(deps: AuthGuardDeps): AuthGuards {
       return err(c, 'UNAUTHORIZED', 'JWT authentication required', 401);
     }
     try {
-      const claims = await verifyToken(header!.slice(7).trim(), deps.jwtSecret, verifyOptions);
+      const claims = await verifyToken(header!.slice(7).trim(), verificationKey, verifyOptions);
       c.set('principal', { type: 'jwt', userId: claims.sub, role: claims.role });
       return next();
     } catch {

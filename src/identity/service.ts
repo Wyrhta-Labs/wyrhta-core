@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { CoreDb } from '../db/client.js';
 import { users, apiKeys, type Role, type User } from './schema.js';
 import { hashPassword, verifyPassword } from './password.js';
-import { signToken, type TokenIdentityOptions } from './jwt.js';
+import { signToken, type SigningKey, type TokenIdentityOptions } from './jwt.js';
 import { generateKey } from './api-key.js';
 
 export type PublicUser = Omit<User, 'passwordHash'>;
@@ -67,16 +67,20 @@ export async function authenticate(
 /**
  * Issue a JWT for `user`. `options.iss` / `options.aud` are optional and, when
  * omitted, the token keeps its historical `{ sub, role, iat, exp }` shape.
+ *
+ * `key` is either the HS256 shared secret (unchanged) or a private key from
+ * `loadPrivateKey`, in which case the token is asymmetrically signed and
+ * carries that key's `kid`.
  */
 export async function issueToken(
   user: { id: string; role: Role },
-  secret: string,
+  key: SigningKey,
   ttlSeconds: number,
   options: TokenIdentityOptions = {}
 ): Promise<{ token: string; expiresIn: number }> {
   const token = await signToken(
     { sub: user.id, role: user.role, iss: options.iss, aud: options.aud },
-    secret,
+    key,
     ttlSeconds
   );
   return { token, expiresIn: ttlSeconds };
