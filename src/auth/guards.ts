@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
 import { err } from '../http/response.js';
-import { verifyToken } from '../identity/jwt.js';
+import { verifyToken, type VerifyTokenOptions } from '../identity/jwt.js';
 import type { Role } from '../identity/schema.js';
 import { detectAuthScheme } from './dispatch.js';
 
@@ -20,6 +20,17 @@ export interface AuthGuardDeps {
   jwtSecret: string;
   /** App API-key prefix, e.g. `kl_` or `he_`. */
   keyPrefix: string;
+  /**
+   * Expected JWT `iss` claim. When set, a token whose `iss` differs (or is
+   * absent) is rejected. Omit to accept any issuer — the pre-v0.2.0 behavior.
+   */
+  jwtIssuer?: string;
+  /**
+   * Expected JWT `aud` claim, i.e. this service's own audience name. When set,
+   * a token minted for another service is rejected. Omit to accept any
+   * audience — the pre-v0.2.0 behavior.
+   */
+  jwtAudience?: string;
   /** App bridge: validate a raw key and resolve its owning user + role. */
   resolveApiKey: (raw: string) => Promise<Principal | null>;
 }
@@ -31,6 +42,8 @@ export interface AuthGuards {
 }
 
 export function createAuthGuards(deps: AuthGuardDeps): AuthGuards {
+  const verifyOptions: VerifyTokenOptions = { iss: deps.jwtIssuer, aud: deps.jwtAudience };
+
   const requireAuth: MiddlewareHandler = async (c, next) => {
     const header = c.req.header('Authorization');
     const scheme = detectAuthScheme(header, deps.keyPrefix);
@@ -44,7 +57,7 @@ export function createAuthGuards(deps: AuthGuardDeps): AuthGuards {
 
     if (scheme === 'jwt') {
       try {
-        const claims = await verifyToken(header!.slice(7).trim(), deps.jwtSecret);
+        const claims = await verifyToken(header!.slice(7).trim(), deps.jwtSecret, verifyOptions);
         c.set('principal', { type: 'jwt', userId: claims.sub, role: claims.role });
         return next();
       } catch {
@@ -61,7 +74,7 @@ export function createAuthGuards(deps: AuthGuardDeps): AuthGuards {
       return err(c, 'UNAUTHORIZED', 'JWT authentication required', 401);
     }
     try {
-      const claims = await verifyToken(header!.slice(7).trim(), deps.jwtSecret);
+      const claims = await verifyToken(header!.slice(7).trim(), deps.jwtSecret, verifyOptions);
       c.set('principal', { type: 'jwt', userId: claims.sub, role: claims.role });
       return next();
     } catch {

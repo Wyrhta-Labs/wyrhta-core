@@ -8,7 +8,7 @@ link — each service is an independent repo:
 ```json
 {
   "dependencies": {
-    "@wyrhta/core": "github:Wyrhta-Labs/wyrhta-core#v0.1.3"
+    "@wyrhta/core": "github:Wyrhta-Labs/wyrhta-core#v0.2.0"
   }
 }
 ```
@@ -25,8 +25,8 @@ Each subpath below is an independent `exports` entry — import only what you ne
 | `@wyrhta/core/config` | Zod-based environment parsing |
 | `@wyrhta/core/lib` | API-key crypto helpers, structured logger |
 | `@wyrhta/core/http` | Response envelope (`ok`/`err`), pagination helpers, and `requestId` / `securityHeaders` / `rateLimit` / `errorHandler` Hono middleware |
-| `@wyrhta/core/identity` | `users` + `api_keys` schema, argon2 password hashing, HS256 JWT issuing/verification, roles (`admin` / `adult` / `child`) |
-| `@wyrhta/core/auth` | Auth-scheme dispatch and Hono guards (`requireAuth`, `requireJwt`, `requireRole`); the consuming app injects the API-key lookup |
+| `@wyrhta/core/identity` | `users` + `api_keys` schema, argon2 password hashing, HS256 JWT issuing/verification (optional `iss` / `aud` claims), roles (`admin` / `adult` / `child`) |
+| `@wyrhta/core/auth` | Auth-scheme dispatch and Hono guards (`requireAuth`, `requireJwt`, `requireRole`); the consuming app injects the API-key lookup and, optionally, the expected JWT issuer/audience |
 | `@wyrhta/core/household` | DB-enforced singleton household |
 | `@wyrhta/core/mcp` | `McpServer` factory over a tool registry, wired to an auth adapter and audit logging |
 | `@wyrhta/core/db` | Drizzle ORM / `postgres.js` client factory plus a migrations runner |

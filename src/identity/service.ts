@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { CoreDb } from '../db/client.js';
 import { users, apiKeys, type Role, type User } from './schema.js';
 import { hashPassword, verifyPassword } from './password.js';
-import { signToken } from './jwt.js';
+import { signToken, type TokenIdentityOptions } from './jwt.js';
 import { generateKey } from './api-key.js';
 
 export type PublicUser = Omit<User, 'passwordHash'>;
@@ -64,12 +64,21 @@ export async function authenticate(
   return valid ? toPublic(row) : null;
 }
 
+/**
+ * Issue a JWT for `user`. `options.iss` / `options.aud` are optional and, when
+ * omitted, the token keeps its historical `{ sub, role, iat, exp }` shape.
+ */
 export async function issueToken(
   user: { id: string; role: Role },
   secret: string,
-  ttlSeconds: number
+  ttlSeconds: number,
+  options: TokenIdentityOptions = {}
 ): Promise<{ token: string; expiresIn: number }> {
-  const token = await signToken({ sub: user.id, role: user.role }, secret, ttlSeconds);
+  const token = await signToken(
+    { sub: user.id, role: user.role, iss: options.iss, aud: options.aud },
+    secret,
+    ttlSeconds
+  );
   return { token, expiresIn: ttlSeconds };
 }
 

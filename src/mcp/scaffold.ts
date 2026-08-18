@@ -27,7 +27,7 @@ function toolErrorText(error: unknown): string {
 export function createMcpServer(
   registry: McpTool[],
   authAdapter: AuthAdapter,
-  info: { name: string; version: string } = { name: '@wyrhta/core', version: '0.1.3' }
+  info: { name: string; version: string } = { name: '@wyrhta/core', version: '0.2.0' }
 ): McpServer {
   const server = new McpServer(info);
 

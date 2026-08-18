@@ -91,3 +91,47 @@ describe('requireRole', () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe('guards with an expected issuer/audience', () => {
+  function buildScopedApp(deps: { jwtIssuer?: string; jwtAudience?: string }) {
+    const guards = createAuthGuards({
+      jwtSecret: SECRET,
+      keyPrefix: 'kl_',
+      resolveApiKey: noKeys,
+      ...deps,
+    });
+    const app = new Hono();
+    app.get('/any', guards.requireAuth, (c) => c.json(c.get('principal')));
+    return app;
+  }
+
+  it('accepts a token minted for this service', async () => {
+    const app = buildScopedApp({ jwtIssuer: 'heorth', jwtAudience: 'kithledger' });
+    const token = await signToken(
+      { sub: 'u1', role: 'admin', iss: 'heorth', aud: 'kithledger' },
+      SECRET,
+      3600
+    );
+    const res = await app.request('/any', { headers: { Authorization: `Bearer ${token}` } });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ type: 'jwt', userId: 'u1', role: 'admin' });
+  });
+
+  it('401s a token minted for another service', async () => {
+    const app = buildScopedApp({ jwtIssuer: 'heorth', jwtAudience: 'kithledger' });
+    const token = await signToken(
+      { sub: 'u1', role: 'admin', iss: 'heorth', aud: 'heorth' },
+      SECRET,
+      3600
+    );
+    const res = await app.request('/any', { headers: { Authorization: `Bearer ${token}` } });
+    expect(res.status).toBe(401);
+  });
+
+  it('accepts a legacy iss/aud-less token when no expectation is configured', async () => {
+    const app = buildScopedApp({});
+    const token = await signToken({ sub: 'u1', role: 'admin' }, SECRET, 3600);
+    const res = await app.request('/any', { headers: { Authorization: `Bearer ${token}` } });
+    expect(res.status).toBe(200);
+  });
+});

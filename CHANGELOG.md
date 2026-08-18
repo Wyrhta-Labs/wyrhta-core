@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/) —
 pre-1.0, a minor bump may break compatibility, a patch bump is safe.
 
+## [0.2.0] - 2026-08-18
+
+### Added
+
+- JWT issuer/audience convention in `./identity`, so a token can say which
+  service minted it and which service it is for (groundwork for Heorth
+  issuing member tokens that a satellite service verifies):
+  - `TokenClaims` gains optional `iss` and `aud`.
+  - `signToken` accepts `iss` / `aud` and writes each claim **only** when
+    supplied — a token signed without them keeps its exact previous
+    `{ sub, role, iat, exp }` payload.
+  - `verifyToken`'s third argument now accepts either the bare algorithm (the
+    original form, still supported) or a `VerifyTokenOptions` object
+    (`{ algorithm?, iss?, aud? }`). An expectation is enforced only when
+    given; a mismatch — including a missing claim — throws the bare
+    UPPER_SNAKE_CASE domain errors `INVALID_ISSUER` / `INVALID_AUDIENCE`,
+    matching the code convention the `./mcp` scaffold surfaces.
+  - `issueToken` takes an optional 4th argument `{ iss?, aud? }`.
+  - `createAuthGuards` deps take optional `jwtIssuer` / `jwtAudience`; when
+    set, `requireAuth` / `requireJwt` reject tokens from another issuer or for
+    another audience with the usual 401.
+
+  Strictly backward compatible: every existing call site — both consumers pass
+  no issuer/audience today — behaves exactly as before, and tokens already
+  issued (7-day TTL) stay valid. Signing keys, rotation, JWKS and asymmetric
+  algorithms are deliberately out of scope; HS256 with a shared secret is
+  unchanged.
+
 ## [0.1.3] - 2026-07-27
 
 ### Fixed

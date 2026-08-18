@@ -26,6 +26,21 @@ describe('issueToken', () => {
     expect(claims.sub).toBe('u1');
     expect(claims.role).toBe('adult');
   });
+
+  it('stamps iss/aud when given, and omits them when not', async () => {
+    const stamped = await issueToken({ id: 'u1', role: 'adult' }, SECRET, 3600, {
+      iss: 'heorth',
+      aud: 'kithledger',
+    });
+    const claims = await verifyToken(stamped.token, SECRET, { iss: 'heorth', aud: 'kithledger' });
+    expect(claims.iss).toBe('heorth');
+    expect(claims.aud).toBe('kithledger');
+
+    const plain = await issueToken({ id: 'u1', role: 'adult' }, SECRET, 3600);
+    const plainClaims = await verifyToken(plain.token, SECRET);
+    expect(plainClaims.iss).toBeUndefined();
+    expect(plainClaims.aud).toBeUndefined();
+  });
 });
 
 describe('createUser', () => {
