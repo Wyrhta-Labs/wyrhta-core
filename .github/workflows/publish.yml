@@ -1,0 +1,60 @@
+name: publish
+
+# Publishes @wyrhta/core to npmjs.com on a v* tag, via npm trusted publishing:
+# GitHub Actions authenticates over OIDC, so there is no NPM_TOKEN secret in
+# this repo to leak or rotate, and npm attaches a provenance attestation
+# automatically. The trusted publisher (org, repo, and THIS workflow filename)
+# is registered once in the package settings on npmjs.com.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC; without it npm falls back to a token
+
+jobs:
+  publish:
+    name: publish to npmjs.com
+    runs-on: ubuntu-latest # trusted publishing does not work on self-hosted runners
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      # Trusted publishing needs npm >= 11.5.1; Node 22 still bundles npm 10.
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Install
+        run: npm ci
+
+      # Publishing an untested build is how a broken tag reaches every consumer
+      # at once. Core is pinned by tag, so there is no quick unpublish path.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # A tag that disagrees with package.json publishes the wrong version under
+      # the right name, which is close to impossible to unpick afterwards.
+      - name: Verify the tag matches package.json
+        run: |
+          pkg="$(node -p "require('./package.json').version")"
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$pkg" != "$tag" ]; then
+            echo "tag ${tag} does not match package.json ${pkg}" >&2
+            exit 1
+          fi
+
+      - name: Publish
+        run: npm publish

@@ -4,6 +4,10 @@
   "license": "MIT",
   "description": "Shared foundation for Wyrhta Labs services: identity, auth, HTTP kit, household, DB conventions",
   "type": "module",
+  "repository": { "type": "git", "url": "git+https://github.com/Wyrhta-Labs/wyrhta-core.git" },
+  "homepage": "https://github.com/Wyrhta-Labs/wyrhta-core#readme",
+  "bugs": "https://github.com/Wyrhta-Labs/wyrhta-core/issues",
+  "publishConfig": { "access": "public", "provenance": true },
   "files": ["dist"],
   "comment:exports": "Each subpath lists 'default' as well as 'import' so CJS tooling (e.g. drizzle-kit, which require()s the schema graph) resolves the package instead of hitting ERR_PACKAGE_PATH_NOT_EXPORTED. The build is ESM-only; 'default' points at the same ESM output and is loaded via Node's require(ESM) support (Node >=22.12). 'default' MUST be listed last.",
   "exports": {
