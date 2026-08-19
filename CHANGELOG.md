@@ -6,7 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/) —
 pre-1.0, a minor bump may break compatibility, a patch bump is safe.
 
-## [Unreleased]
+## [0.4.0] - 2026-08-19
+
+A security release. Every dependency advisory against `@wyrhta/core` is closed.
+The `drizzle-orm` range moved across a `0.x` minor, so consumers must upgrade
+in step — see **Breaking** below.
+
+### Breaking
+
+- **`drizzle-orm` now requires `^0.45.2`** (was `^0.39.3`). A service that pins
+  `drizzle-orm` itself must move to the same range, or npm resolves two copies
+  of the ORM and the `PostgresJsDatabase` types stop matching across the
+  boundary.
 
 ### Security
 
