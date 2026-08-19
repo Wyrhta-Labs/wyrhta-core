@@ -4,7 +4,24 @@ name: publish
 # GitHub Actions authenticates over OIDC, so there is no NPM_TOKEN secret in
 # this repo to leak or rotate, and npm attaches a provenance attestation
 # automatically. The trusted publisher (org, repo, and THIS workflow filename)
-# is registered once in the package settings on npmjs.com.
+# is registered once in the package settings on npmjs.com, as:
+#
+#     organization: Wyrhta-Labs      workflow filename: publish.yml
+#     repository:   wyrhta-core      environment:       (none)
+#
+# Renaming this file, moving the job under an `environment:`, or forking the
+# repo therefore breaks publishing — and it breaks in a way that reads like
+# something else entirely:
+#
+#     npm error 404 Not Found - PUT https://registry.npmjs.org/@wyrhta%2fcore
+#     npm error 404  '@wyrhta/core@x.y.z' could not be found or you do not
+#     npm error 404  have permission to access it.
+#
+# That 404 means the run identity did not match the registered publisher. It
+# does not mean the package is missing, and it appears only after the tag
+# exists, since npm's version pre-flight is client-side and passes first. If
+# you hit it, fix the publisher config and re-run this workflow — the tag is
+# already correct, so `gh run rerun <id> --failed` is enough.
 on:
   push:
     tags: ["v*"]
