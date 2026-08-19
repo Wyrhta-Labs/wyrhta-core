@@ -21,11 +21,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # No dependency cache on the publish path. A poisoned npm cache would run
+      # attacker-controlled code in the job that holds the OIDC token used to
+      # sign and publish, so this job restores nothing: `cache` is unset and
+      # `package-manager-cache: false` also disables the automatic caching that
+      # setup-node v5+ turns on by itself. `npm ci` pays a few seconds more here,
+      # which is the right trade on a job that publishes to a public registry.
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-          cache: npm
+          package-manager-cache: false
 
       # Trusted publishing needs npm >= 11.5.1; Node 22 still bundles npm 10.
       - name: Upgrade npm
