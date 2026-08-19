@@ -27,15 +27,24 @@ jobs:
       # `package-manager-cache: false` also disables the automatic caching that
       # setup-node v5+ turns on by itself. `npm ci` pays a few seconds more here,
       # which is the right trade on a job that publishes to a public registry.
+
+      # Node 24 for the bundled npm: trusted publishing needs npm >= 11.5.1, and
+      # 24.x ships 11.17. Node 22 bundles npm 10, which is why this job used to
+      # `npm install -g npm@latest` first — installing an unpinned npm on every
+      # release, into the job that signs the tarball. The bundled npm removes
+      # that moving part. The published package still supports Node >=22.12;
+      # this only picks the toolchain that builds it.
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
-      # Trusted publishing needs npm >= 11.5.1; Node 22 still bundles npm 10.
-      - name: Upgrade npm
-        run: npm install -g npm@latest
+      # Fail here with a clear reason rather than deep inside `npm publish`, if a
+      # future Node 24 image ever bundles an npm too old for trusted publishing.
+      - name: Verify npm supports trusted publishing
+        run: >-
+          node -e 'const h=process.argv[1].split(".").map(Number), n=[11,5,1]; for (let i=0;i<3;i++){ if(h[i]>n[i]) break; if(h[i]<n[i]){ console.error(`npm ${process.argv[1]} is older than 11.5.1; trusted publishing needs 11.5.1+`); process.exit(1) } } console.log(`npm ${process.argv[1]} supports trusted publishing`)' "$(npm --version)"
 
       - name: Install
         run: npm ci
