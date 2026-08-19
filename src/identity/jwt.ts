@@ -2,6 +2,18 @@ import { sign, verify, decode } from 'hono/jwt';
 import type { Role } from './schema.js';
 import type { JwtAlgorithm, PrivateSigningKey, PublicVerificationKey } from './keys.js';
 
+/**
+ * Domain error convention (see README § "Domain error codes"): expected,
+ * caller-actionable failures in this module are thrown as a bare `Error`
+ * whose message is an UPPER_SNAKE_CASE code matching `^[A-Z][A-Z0-9_]{1,63}$`
+ * — `INVALID_TOKEN`, `INVALID_ISSUER`, `INVALID_AUDIENCE`, `UNKNOWN_KEY_ID`,
+ * `INVALID_ALGORITHM`, `TOKEN_EXPIRED`, `TOKEN_NOT_BEFORE`, `TOKEN_ISSUED_AT`.
+ * Callers may match on that shape to decide what is safe to surface; anything
+ * else escaping this module is an unexpected failure with no such contract.
+ * (The convention was previously implemented by the `./mcp` scaffold, removed
+ * in 0.3.0.)
+ */
+
 export interface TokenClaims {
   sub: string;
   role: Role;

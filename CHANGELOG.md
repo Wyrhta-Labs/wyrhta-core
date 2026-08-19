@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/) —
 pre-1.0, a minor bump may break compatibility, a patch bump is safe.
 
+## [0.3.0] - 2026-08-19
+
+### Removed
+
+- **The `./mcp` module and the `@modelcontextprotocol/sdk` dependency.**
+  ADR 0008 made MCP a standalone container (`heorth-mcp`) that talks to
+  Heorth and KithLedger over their REST APIs, so the scaffold no longer
+  belongs in the shared foundation. Deleted: `src/mcp/{index,scaffold,types}.ts`
+  (`createMcpServer`, `McpTool`, `McpToolContext`, `McpToolResult`,
+  `McpPrincipal`, `AuthAdapter`), their re-export from the root barrel, the
+  `./mcp` `exports` entry, and `tests/mcp/`.
+
+  The code did not vanish — `heorth-mcp` took a copy as its own source and has
+  evolved it well past this version (its registry now serves 50 tools). Core
+  keeps only what both REST services still need.
+
+  The real prize is the dependency: `@modelcontextprotocol/sdk` was the only
+  consumer of that scaffold, and dropping it here removes it from both
+  production services' dependency trees as well — neither Heorth nor
+  KithLedger imports MCP any more.
+
+  **Breaking.** Any import of `@wyrhta/core/mcp`, or of an `Mcp*` symbol from
+  the root barrel, stops resolving. Consumers must be on a build that no
+  longer imports the scaffold before bumping their pin to `v0.3.0`; both
+  current consumers already are.
+
+### Changed
+
+- The UPPER_SNAKE_CASE domain-error convention (`^[A-Z][A-Z0-9_]{1,63}$`) is
+  now documented in `README.md` (§ "Domain error codes") and in
+  `src/identity/jwt.ts`, rather than only in the deleted `./mcp` scaffold that
+  happened to enforce it. It stays load-bearing for core's own codes —
+  `INVALID_TOKEN`, `INVALID_ISSUER`, `INVALID_AUDIENCE`, `UNKNOWN_KEY_ID`,
+  `INVALID_ALGORITHM`, `TOKEN_EXPIRED`, `INVALID_KEY_MATERIAL`,
+  `MISSING_JWT_VERIFICATION_KEY`, `CONFLICT`.
+
+
 ## [0.2.0] - 2026-08-18
 
 ### Added
