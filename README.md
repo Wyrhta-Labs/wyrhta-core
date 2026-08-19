@@ -2,19 +2,38 @@
 
 Shared foundation library for Wyrhta Labs household-manager services
 ([Heorth](https://github.com/Wyrhta-Labs/Heorth), [KithLedger](https://github.com/Wyrhta-Labs/KithLedger)).
-It is consumed as a **pinned GitHub-tag dependency**, never a workspace/local
-link — each service is an independent repo:
+Published on npm, and consumed as a normal versioned dependency — never a
+workspace/local link, because each service is an independent repo:
+
+```bash
+npm install @wyrhta/core
+```
 
 ```json
 {
   "dependencies": {
-    "@wyrhta/core": "github:Wyrhta-Labs/wyrhta-core#v0.3.0"
+    "@wyrhta/core": "^0.3.1"
   }
 }
 ```
 
-A change here only reaches consumers when a new tag is cut and the
-consumer's `package.json` pin is deliberately bumped.
+Every release is published from CI by
+[trusted publishing](https://docs.npmjs.com/trusted-publishers) (ADR 0011), so
+each tarball carries a provenance attestation naming the workflow, repository,
+and commit that produced it — `npm audit signatures` verifies it.
+
+Pinning the git tag directly still works and is the right way to test an
+unreleased change against a consumer:
+
+```json
+{ "@wyrhta/core": "github:Wyrhta-Labs/wyrhta-core#v0.3.1" }
+```
+
+Note that this form builds core from source during install, so it needs `git`
+and a TypeScript toolchain on the machine running `npm install`.
+
+Either way, a change here only reaches consumers when a new version is released
+and the consumer's `package.json` is deliberately bumped.
 
 ## Module map
 

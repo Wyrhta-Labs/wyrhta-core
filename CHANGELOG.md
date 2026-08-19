@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/) —
 pre-1.0, a minor bump may break compatibility, a patch bump is safe.
 
+## [0.3.1] - 2026-08-19
+
+No API change. This release exists to move the library onto a real registry.
+
+### Added
+
+- **Published to npmjs.com as `@wyrhta/core`**, via npm trusted publishing from
+  GitHub Actions (ADR 0011). Authentication is OIDC, so no npm token is stored
+  in this repo, and every published tarball carries a provenance attestation
+  naming the workflow, repository, and commit that built it.
+
+  Consumers can move from the git-tag pin to a normal semver range:
+
+  ```json
+  { "@wyrhta/core": "^0.3.1" }
+  ```
+
+  which removes the requirement for `git` and a TypeScript toolchain at install
+  time, removes the second repository built during `npm install`, and lets
+  Dependabot see the dependency at all. The git-tag form keeps working and
+  remains the right way to test an unreleased change against a consumer.
+
+- **MIT licence**, plus `SECURITY.md` and `CONTRIBUTING.md`, as part of the
+  Wyrhta Labs repos going public.
+
+### Fixed
+
+- **CI ran on nothing.** The workflow triggered on a `staging` branch this repo
+  does not use, so the library every service pins had no automated checks. It
+  now runs on push and pull request against `main`.
+
 ## [0.3.0] - 2026-08-19
 
 ### Removed
