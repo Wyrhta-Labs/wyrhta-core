@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { DrizzleQueryError } from 'drizzle-orm';
 import {
   isUniqueViolation,
   issueToken,
@@ -15,6 +16,23 @@ describe('isUniqueViolation', () => {
     expect(isUniqueViolation({ code: '23505' })).toBe(true);
     expect(isUniqueViolation({ code: '23503' })).toBe(false);
     expect(isUniqueViolation(new Error('nope'))).toBe(false);
+  });
+
+  // drizzle-orm >= 0.44 hands us the driver error wrapped in DrizzleQueryError,
+  // so this uses the real class rather than a hand-rolled shape.
+  it('sees through the DrizzleQueryError wrapper drizzle-orm >= 0.44 throws', () => {
+    const violation = Object.assign(new Error('duplicate key'), { code: '23505' });
+    expect(isUniqueViolation(new DrizzleQueryError('insert ...', [], violation))).toBe(true);
+
+    const otherFailure = Object.assign(new Error('fk violation'), { code: '23503' });
+    expect(isUniqueViolation(new DrizzleQueryError('insert ...', [], otherFailure))).toBe(false);
+    expect(isUniqueViolation(new DrizzleQueryError('insert ...', [], undefined))).toBe(false);
+  });
+
+  it('does not loop forever on a self-referencing cause chain', () => {
+    const looped: { code: string; cause?: unknown } = { code: '23503' };
+    looped.cause = looped;
+    expect(isUniqueViolation(looped)).toBe(false);
   });
 });
 

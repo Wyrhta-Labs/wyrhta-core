@@ -16,14 +16,22 @@ export interface CreateUserInput {
   avatarColor?: string | null;
 }
 
-/** True for a Postgres UNIQUE constraint violation (code 23505). */
+/**
+ * True for a Postgres UNIQUE constraint violation (code 23505).
+ *
+ * drizzle-orm >= 0.44 wraps every driver error in `DrizzleQueryError`, which
+ * carries no `code` of its own and puts the original postgres.js error on
+ * `cause`. Checking only the top-level error therefore misses real violations,
+ * so walk the `cause` chain (bounded, in case a driver ever self-references).
+ */
 export function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code: string }).code === '23505'
-  );
+  for (let current = error, depth = 0; depth < 10; depth++) {
+    if (typeof current !== 'object' || current === null) return false;
+    if ('code' in current && (current as { code: unknown }).code === '23505') return true;
+    if (!('cause' in current)) return false;
+    current = (current as { cause: unknown }).cause;
+  }
+  return false;
 }
 
 function toPublic(user: User): PublicUser {

@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/) —
 pre-1.0, a minor bump may break compatibility, a patch bump is safe.
 
+## [Unreleased]
+
+### Security
+
+- **Cleared all eight open Dependabot alerts; `npm audit` now reports zero
+  vulnerabilities.** The two that reach consumers were dependency ranges, not
+  just lockfile pins, so the declared ranges moved too:
+
+  - `drizzle-orm` `^0.39.3` -> `^0.45.2` — SQL injection via improperly escaped
+    SQL identifiers (GHSA-gpj5-g38j-94v9, high). This library never calls
+    `sql.identifier()` or `sql.as()`, so it was not itself exposed, but the
+    vulnerable range shipped to every service that depends on `@wyrhta/core`.
+  - `hono` `^4.7.4` -> `^4.12.34` — four advisories: `memo()` retaining SSR
+    output across requests (cross-user data disclosure), ReDoS in the CORS
+    middleware, algorithmic-complexity DoS in the language middleware, and the
+    Proxy Helper leaking hop-by-hop response headers.
+
+  Dev-only, resolved by lockfile refresh: `postcss` 8.5.17 -> 8.5.26 (two
+  sourceMappingURL path-traversal advisories) and `brace-expansion` (DoS).
+
+- **`drizzle-kit` `^0.30.4` -> `^0.31.10`**, which drops the `esbuild ^0.19.7`
+  dependency carrying GHSA-67mh-4wv8-2f99. 0.31.x still depends on the
+  deprecated `@esbuild-kit/*` packages, and `@esbuild-kit/core-utils` hard-pins
+  `esbuild ~0.18.20`, so an `overrides` entry forces that one onto the patched
+  line as well. It only uses esbuild's `transform()`, which is unchanged from
+  0.18 to 0.25. The override can go once drizzle-kit 1.x is stable.
+
+### Fixed
+
+- **`isUniqueViolation()` stopped recognising unique violations** under
+  drizzle-orm >= 0.44, which wraps every driver error in `DrizzleQueryError` and
+  moves the postgres.js error (and its `code`) onto `cause`. The check read
+  `code` off the top-level error only, so a duplicate email or handle would have
+  escaped `createUser()`'s `CONFLICT` branch and surfaced as an unhandled error
+  instead of a 409. It now walks the `cause` chain. The existing tests use mock
+  `db` objects and could not catch this, so there are now tests built on the
+  real `DrizzleQueryError`.
+
 ## [0.3.1] - 2026-08-19
 
 No API change. This release exists to move the library onto a real registry.
