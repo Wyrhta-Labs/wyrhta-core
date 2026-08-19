@@ -1,10 +1,14 @@
-name: Staging build
+name: tests
 
+# Core develops on main (single-trunk, pre-alpha), so main is what CI must
+# cover: every push, and every pull request targeting it. This file used to
+# trigger on a `staging` branch that the repo does not use, which meant the
+# library every other service depends on had no CI at all.
 on:
   push:
-    branches: [staging]
+    branches: [main]
   pull_request:
-    branches: [staging]
+    branches: [main]
 
 jobs:
   build:
