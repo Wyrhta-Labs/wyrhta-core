@@ -1,6 +1,7 @@
 {
   "name": "@wyrhta/core",
   "version": "0.3.0",
+  "license": "MIT",
   "description": "Shared foundation for Wyrhta Labs services: identity, auth, HTTP kit, household, DB conventions",
   "type": "module",
   "files": ["dist"],
